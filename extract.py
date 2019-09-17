@@ -41,7 +41,7 @@ allow_feat_dist = 5.0        #Alloewd distance between intermodal features
 feat_max = 1000
 feat_quality_level = 0.01
 feat_dist = 5
-patch_size = 301
+patch_size = 151
 
 root_dir = '/home/deeplearning/Code/Python/DL_DomainIndependentImageTransfer/images/'
 
@@ -49,6 +49,12 @@ domain_A_folder = 'lwir/'
 domain_B_folder = 'visible/'
 image_A_type = '.jpg'
 image_B_type = '.jpg'
+
+current_working_dir = ''
+output_dir = os.getcwd()
+output_filetype = '.jpg'
+suffix_A = 'thermal_'
+suffix_B = 'rgb_'
 
 ##
 # Load Data
@@ -82,6 +88,17 @@ if(len(files_domainA)!=len(files_domainA) or len(files_domainA)==0):
 # Process Images and Detect features
 ##
 for idx, imageA_path in enumerate(files_domainA):
+    #split_path
+    path_split = imageA_path.split('/')
+    c_set = path_split[-4]
+    c_version = path_split[-3]
+    #Check if folder exist, otherwise create
+    if not os.path.isdir(output_dir+'/'+c_set):
+        os.mkdir(output_dir+'/'+c_set)
+
+    if not os.path.isdir(output_dir+'/'+c_set+'/'+c_version):
+        os.mkdir(output_dir+'/'+c_set+'/'+c_version)
+
     if math.fmod(idx, every_nth_image)==0:
         imageB_path = files_domainB[idx]
         #Load Images
@@ -119,11 +136,19 @@ for idx, imageA_path in enumerate(files_domainA):
         #Extract patches
         for idx in range(len(cornersA_accepted_plot)):
             if patchValid(cornersA_accepted_plot[idx], patch_size, imgA_gray) and patchValid(cornersB_accepted_plot[idx], patch_size, imgB_gray):
-                patchA = extractPatch(imgA, cornersB_accepted_plot[idx], patch_size)
+                patchA = extractPatch(imgA, cornersA_accepted_plot[idx], patch_size)
                 patchB = extractPatch(imgB, cornersB_accepted_plot[idx], patch_size)  
+                #Generate file pathes
+                if not os.path.isdir(output_dir+'/'+c_set+'/'+c_version+'/kp_' + str(idx)):
+                    os.mkdir(output_dir+'/'+c_set+'/'+c_version+'/kp_' + str(idx))
+                pathA = output_dir+'/'+c_set+'/'+c_version+'/kp_' + str(idx) + '/' + suffix_A + output_filetype
+                pathB = output_dir+'/'+c_set+'/'+c_version+'/kp_' + str(idx) + '/' + suffix_B + output_filetype
+                #Write patches
+                #cv2.imwrite( "../../images/Gray_Image.jpg", patchA);
+                #cv2.imwrite( "../../images/Gray_Image.jpg", patchB);
 
                 #Visualize Output
-                cv2.imshow('imageA',patchA)
-                cv2.imshow('imageB',patchB)
-                cv2.waitKey(10)
-                cv2.destroyAllWindows()
+                #cv2.imshow('imageA',patchA)
+                #cv2.imshow('imageB',patchB)
+                #cv2.waitKey(10)
+                #cv2.destroyAllWindows()
