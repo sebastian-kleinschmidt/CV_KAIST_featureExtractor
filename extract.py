@@ -53,8 +53,8 @@ image_B_type = '.jpg'
 current_working_dir = ''
 output_dir = os.getcwd()
 output_filetype = '.jpg'
-suffix_A = 'thermal_'
-suffix_B = 'rgb_'
+suffix_A = 'thermal_keypoint'
+suffix_B = 'rgb_keypoint'
 
 ##
 # Load Data
@@ -136,6 +136,7 @@ for idx, imageA_path in enumerate(files_domainA):
         #Extract patches
         for idx in range(len(cornersA_accepted_plot)):
             if patchValid(cornersA_accepted_plot[idx], patch_size, imgA_gray) and patchValid(cornersB_accepted_plot[idx], patch_size, imgB_gray):
+                print('Processing: '+c_set+'/'+c_version+'/kp_' + str(idx))
                 patchA = extractPatch(imgA, cornersA_accepted_plot[idx], patch_size)
                 patchB = extractPatch(imgB, cornersB_accepted_plot[idx], patch_size)  
                 #Generate file pathes
@@ -144,8 +145,8 @@ for idx, imageA_path in enumerate(files_domainA):
                 pathA = output_dir+'/'+c_set+'/'+c_version+'/kp_' + str(idx) + '/' + suffix_A + output_filetype
                 pathB = output_dir+'/'+c_set+'/'+c_version+'/kp_' + str(idx) + '/' + suffix_B + output_filetype
                 #Write patches
-                #cv2.imwrite( "../../images/Gray_Image.jpg", patchA);
-                #cv2.imwrite( "../../images/Gray_Image.jpg", patchB);
+                cv2.imwrite(pathA, patchA);
+                cv2.imwrite(pathB, patchB);
 
                 #Visualize Output
                 #cv2.imshow('imageA',patchA)
