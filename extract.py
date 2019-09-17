@@ -4,11 +4,44 @@ import numpy as np
 import math
 import cv2
 
+##
+# Helper
+##
+
+
+def distance(pointA, pointB):
+    dist = math.sqrt((pointB[0]-pointA[0])**2+(pointB[1]-pointA[1])**2)
+    return dist
+
+def patchValid(corner, patch_size, img):
+    img_size = img.shape
+    corner[0] = int(corner[0])
+    corner[1] = int(corner[1])
+    lr_dist = (patch_size-1)/2
+
+    if corner[0]-lr_dist>0 and corner[1]-lr_dist>0 and corner[0]+lr_dist<img_size[0] and corner[1]+lr_dist<img_size[1]:
+        return True
+    return False
+
+def extractPatch(img, corner, patch_size):
+    corner[0] = int(corner[0])
+    corner[1] = int(corner[1])
+    lr_dist = (patch_size-1)/2
+    lr_dist = int(lr_dist)
+    patch = img[corner[0]-lr_dist:corner[0]+lr_dist,corner[1]-lr_dist:corner[1]+lr_dist]
+    return patch
+
+##
+# Variables
+##
+
 every_nth_image = 50    #Only take every n-th image
-allow_feat_dist = 5        #Alloewd distance between intermodal features
+image_size = [512,640]
+allow_feat_dist = 5.0        #Alloewd distance between intermodal features
 feat_max = 1000
 feat_quality_level = 0.01
 feat_dist = 5
+patch_size = 301
 
 root_dir = '/home/deeplearning/Code/Python/DL_DomainIndependentImageTransfer/images/'
 
@@ -53,26 +86,44 @@ for idx, imageA_path in enumerate(files_domainA):
         imageB_path = files_domainB[idx]
         #Load Images
         imgA = cv2.imread(imageA_path)
-        imgA = cv2.cvtColor(imgA,cv2.COLOR_BGR2GRAY)
+        imgA_gray = cv2.cvtColor(imgA,cv2.COLOR_BGR2GRAY)
         imgB = cv2.imread(imageB_path)
-        imgB = cv2.cvtColor(imgB,cv2.COLOR_BGR2GRAY)
-        #Detect features in both images
-        cornersA = cv2.goodFeaturesToTrack(imgA,feat_max, feat_quality_level, feat_dist)
-        cornersA_plot = np.int0(cornersA)
-        cornersB = cv2.goodFeaturesToTrack(imgB,feat_max, feat_quality_level, feat_dist)
-        cornersB_plot = np.int0(cornersB)
-        #Visualize Features
-        for i in cornersA_plot:
-            x,y = i.ravel()
-            cv2.circle(imgA,(x,y),3,255,-1)
-        for i in cornersB_plot:
-            x,y = i.ravel()
-            cv2.circle(imgB,(x,y),3,255,-1)
+        imgB_gray = cv2.cvtColor(imgB,cv2.COLOR_BGR2GRAY)
 
-        #Visualize Images
-        cv2.imshow('image',imgA)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-        cv2.imshow('image',imgB)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        #Detect features in both images
+        cornersA = cv2.goodFeaturesToTrack(imgA_gray,feat_max, feat_quality_level, feat_dist)
+        #cornersA_plot = np.int0(cornersA)
+        cornersB = cv2.goodFeaturesToTrack(imgB_gray,feat_max, feat_quality_level, feat_dist)
+
+        #Filter Corners
+        cornersA_accepted = []
+        cornersB_accepted = []
+
+        for idxA, cornerA in enumerate(cornersA):
+            min_idxA = -1
+            min_idxB = -1
+            min_dist = 99999.0;
+            for idxB, cornerB in enumerate(cornersB):
+                temp_dist = distance(cornerA[0],cornerB[0])
+                if temp_dist<min_dist:
+                    min_dist = temp_dist
+                    min_idxA = idxA
+                    min_idxB = idxB
+            if min_dist<allow_feat_dist:
+                cornersA_accepted.append(cornersA[min_idxA][0])
+                cornersB_accepted.append(cornersB[min_idxB][0])
+
+        cornersA_accepted_plot = np.int0(cornersA_accepted)
+        cornersB_accepted_plot = np.int0(cornersB_accepted)
+
+        #Extract patches
+        for idx in range(len(cornersA_accepted_plot)):
+            if patchValid(cornersA_accepted_plot[idx], patch_size, imgA_gray) and patchValid(cornersB_accepted_plot[idx], patch_size, imgB_gray):
+                patchA = extractPatch(imgA, cornersB_accepted_plot[idx], patch_size)
+                patchB = extractPatch(imgB, cornersB_accepted_plot[idx], patch_size)  
+
+                #Visualize Output
+                cv2.imshow('imageA',patchA)
+                cv2.imshow('imageB',patchB)
+                cv2.waitKey(10)
+                cv2.destroyAllWindows()
