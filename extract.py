@@ -35,13 +35,13 @@ def extractPatch(img, corner, patch_size):
 # Variables
 ##
 
-every_nth_image = 50    #Only take every n-th image
+every_nth_image = 100    #Only take every n-th image
 image_size = [512,640]
 allow_feat_dist = 5.0        #Alloewd distance between intermodal features
-feat_max = 1000
+feat_max = 250
 feat_quality_level = 0.01
-feat_dist = 5
-patch_size = 151
+feat_dist = 25.0
+patch_size = 301
 
 root_dir = '/home/deeplearning/Code/Python/DL_DomainIndependentImageTransfer/images/'
 
@@ -71,6 +71,7 @@ for file_set in files_sets:
 files_domainA = []
 files_domainB = []
 
+
 for folder in file_versions:
     for subfolder in folder:
         tempA = sorted(glob.glob(subfolder+'/'+domain_A_folder+"*"+image_A_type, recursive=True))
@@ -87,7 +88,7 @@ if(len(files_domainA)!=len(files_domainA) or len(files_domainA)==0):
 ##
 # Process Images and Detect features
 ##
-for idx, imageA_path in enumerate(files_domainA):
+for img_idx, imageA_path in enumerate(files_domainA):
     #split_path
     path_split = imageA_path.split('/')
     c_set = path_split[-4]
@@ -99,8 +100,11 @@ for idx, imageA_path in enumerate(files_domainA):
     if not os.path.isdir(output_dir+'/'+c_set+'/'+c_version):
         os.mkdir(output_dir+'/'+c_set+'/'+c_version)
 
-    if math.fmod(idx, every_nth_image)==0:
-        imageB_path = files_domainB[idx]
+    if math.fmod(img_idx, every_nth_image)==0:
+        if not os.path.isdir(output_dir+'/'+c_set+'/'+c_version+'/'+str(img_idx)):
+            os.mkdir(output_dir+'/'+c_set+'/'+c_version+'/'+str(img_idx))
+
+        imageB_path = files_domainB[img_idx]
         #Load Images
         imgA = cv2.imread(imageA_path)
         imgA_gray = cv2.cvtColor(imgA,cv2.COLOR_BGR2GRAY)
@@ -136,14 +140,14 @@ for idx, imageA_path in enumerate(files_domainA):
         #Extract patches
         for idx in range(len(cornersA_accepted_plot)):
             if patchValid(cornersA_accepted_plot[idx], patch_size, imgA_gray) and patchValid(cornersB_accepted_plot[idx], patch_size, imgB_gray):
-                print('Processing: '+c_set+'/'+c_version+'/kp_' + str(idx))
+                print('Processing: '+c_set+'/'+c_version+'/'+str(img_idx)+'/kp_' + str(idx))
                 patchA = extractPatch(imgA, cornersA_accepted_plot[idx], patch_size)
                 patchB = extractPatch(imgB, cornersB_accepted_plot[idx], patch_size)  
                 #Generate file pathes
-                if not os.path.isdir(output_dir+'/'+c_set+'/'+c_version+'/kp_' + str(idx)):
-                    os.mkdir(output_dir+'/'+c_set+'/'+c_version+'/kp_' + str(idx))
-                pathA = output_dir+'/'+c_set+'/'+c_version+'/kp_' + str(idx) + '/' + suffix_A + output_filetype
-                pathB = output_dir+'/'+c_set+'/'+c_version+'/kp_' + str(idx) + '/' + suffix_B + output_filetype
+                if not os.path.isdir(output_dir+'/'+c_set+'/'+c_version+'/'+str(img_idx)+'/kp_' + str(idx)):
+                    os.mkdir(output_dir+'/'+c_set+'/'+c_version+'/'+str(img_idx)+'/kp_' + str(idx))
+                pathA = output_dir+'/'+c_set+'/'+c_version+'/'+str(img_idx)+'/kp_' + str(idx) + '/' + suffix_A + output_filetype
+                pathB = output_dir+'/'+c_set+'/'+c_version+'/'+str(img_idx)+'/kp_' + str(idx) + '/' + suffix_B + output_filetype
                 #Write patches
                 cv2.imwrite(pathA, patchA);
                 cv2.imwrite(pathB, patchB);
